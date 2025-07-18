@@ -11,8 +11,6 @@ client = OpenAI(
     api_key=XAI_API_KEY,
 )
 
-MESSAGE_TO_MATCH = "grokisthistrue"
-
 
 class Real(commands.Cog):
     def __init__(self, client: Bot):
@@ -20,20 +18,34 @@ class Real(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
-        if message.reference is None:
-            return
-
         if (
-            message.content.strip().replace(" ", "").lower() not in MESSAGE_TO_MATCH
-            and MESSAGE_TO_MATCH not in message.content.strip().replace(" ", "").lower()
-            and next((i for i in message.mentions if i.id == self.client.user.id), None)
+            next((i for i in message.mentions if i.id == self.client.user.id), None)
             is None
         ):
             return
+        
+        if message.reference is None:
+            message_to_check = message
+            message_content = message.content.strip()
 
-        message_to_check = await message.channel.fetch_message(
-            message.reference.message_id
-        )
+        else:
+            try:
+                message_to_check = await message.channel.fetch_message(
+                    message.reference.message_id
+                )
+
+            except Exception:
+                return
+            
+            message_content = message_to_check.content.strip()
+
+        test_msg = message_content
+
+        for i in message.mentions:
+            test_msg = test_msg.replace(i.mention, i.name)
+
+        if test_msg == "":
+            return
 
         completion = client.chat.completions.create(
             model=XAI_MODEL,
@@ -42,7 +54,7 @@ class Real(commands.Cog):
                     "role": "system",
                     "content": "You are a resourceful assistant who will prove or disprove the user",
                 },
-                {"role": "user", "content": message_to_check.content},
+                {"role": "user", "content": message_content},
             ],
         )
 
