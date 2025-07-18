@@ -18,6 +18,9 @@ class Real(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
+        if message.author.id == self.client.user.id:
+            return
+
         if (
             next((i for i in message.mentions if i.id == self.client.user.id), None)
             is None
